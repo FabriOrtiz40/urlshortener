@@ -1,0 +1,11 @@
+
+- path: /google
+  url: https://www.google.com
+- path: /gh
+  url: https://github.com
+- path: /ig
+  url: https://instagram.com
+- path: /dogs
+  url: https://en.wikipedia.org/wiki/Dog
+- path: /cats
+  url: https://en.wikipedia.org/wiki/Cat  
