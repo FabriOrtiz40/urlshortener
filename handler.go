@@ -2,8 +2,11 @@ package main
 
 import (
 	"net/http"
-
+	"log"
 	"gopkg.in/yaml.v2"
+	"encoding/json"
+	bolt "go.etcd.io/bbolt"
+
 )
 
 type pathURL struct {
@@ -48,4 +51,46 @@ func YAMLHandler(yamlData []byte, fallback http.Handler) (http.HandlerFunc, erro
 	pathMap := buildMap(paths)
 	return MapHandler(pathMap, fallback), nil
 }
+
+func JSONHandler(jsonData []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	var paths []pathURL
+	err := json.Unmarshal(jsonData, &paths)
+	if err != nil {
+		return nil, err
+	}
+	pathMap := buildMap(paths)
+	return MapHandler(pathMap, fallback), nil
+}
+
+func DBHandler(db *bolt.DB, fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
+		var targetURL string
+		err := db.View(func(tx *bolt.Tx) error {
+			bucket := tx.Bucket([]byte("paths"))
+			if bucket == nil {
+				return nil // No bucket, no redirect
+			}
+			val := bucket.Get([]byte(path))
+			if val != nil {
+				targetURL = string(val)
+			}
+			return nil
+		})
+
+		if err != nil {
+			log.Printf("Error al acceder a la DB: %v", err)
+			fallback.ServeHTTP(w, r)
+			return
+		}
+
+		if targetURL != "" {
+			http.Redirect(w, r, targetURL, http.StatusFound)
+		} else {
+			fallback.ServeHTTP(w, r)
+		}
+	}
+}
+
 
