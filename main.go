@@ -5,14 +5,22 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"flag"
 )
 
+
+
+
 func main() {
+
+	yamlPath := flag.String("yaml", "paths.yaml", "Ruta al archivo YAML con los paths")
+	flag.Parse()
+
 	fallback := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Hola! Esta página no existe.")
 	})
 
-	yamlFile, err := os.ReadFile("paths.yaml")
+	yamlFile, err := os.ReadFile(*yamlPath)
 	if err != nil {
 		log.Fatalf("Error leyendo archivo YAML: %v", err)
 	}
